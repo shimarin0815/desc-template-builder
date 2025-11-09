@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>概要欄テンプレートビルダー</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        /* ここにCSSを書きます */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            --secondary-gradient: linear-gradient(135deg, #fc00ff 0%, #00dbde 100%);
+            --glass-background: rgba(255, 255, 255, 0.1);
+            --border-color: rgba(255, 255, 255, 0.2);
+            --text-color: #e0e0e0;
+            --light-text-color: #a0a0a0;
+            --shadow-light: rgba(255, 255, 255, 0.05);
+            --shadow-dark: rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
+            background-size: 400% 400%;
+            animation: gradientAnimation 15s ease infinite;
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            display: flex;
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
+            background: var(--glass-background);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 var(--shadow-dark);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .left-panel, .right-panel {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .left-panel {
+            border-right: 1px solid var(--border-color);
+        }
+
+        h2, h3 {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-color);
+            margin-top: 0;
+            text-shadow: 0 0 5px var(--shadow-light);
+        }
+
+        .part-list, .template-area {
+            flex-grow: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .part-item {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+        }
+
+        .part-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .part-item.dragging {
+            opacity: 0.7;
+            transform: scale(0.95);
+        }
+
+        .part-item i {
+            margin-right: 10px;
+        }
+
+        .part-item .remove-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .part-item .remove-btn:hover {
+            color: white;
+        }
+
+        .template-placeholder {
+            min-height: 50px; /* Placeholder for droppable area */
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--light-text-color);
+            font-style: italic;
+        }
+
+        .template-area .part-item {
+            background: var(--secondary-gradient);
+        }
+
+        .add-new-part {
+            background: var(--glass-background);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+            transition: background 0.2s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .add-new-part:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .preview-area {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            font-size: 0.9em;
+            line-height: 1.6;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .copy-button {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            align-self: flex-end; /* 右下配置 */
+        }
+
+        .copy-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #2a2a4a 0%, #3a3a5a 100%);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 500px;
+            color: var(--text-color);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-content h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .modal-content label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .modal-content input[type="text"],
+        .modal-content textarea {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 1em;
+        }
+
+        .modal-content input[type="text"]:focus,
+        .modal-content textarea:focus {
+            outline: none;
+            border-color: #00bcd4;
+            box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.3);
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .modal-buttons .cancel-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-color);
+        }
+
+        .modal-buttons .cancel-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .modal-buttons .save-btn {
+            background: #00bcd4;
+            color: white;
+        }
+
+        .modal-buttons .save-btn:hover {
+            background: #00a4bd;
+            transform: translateY(-1px);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .header {
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(5px);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px var(--shadow-dark);
+            z-index: 2;
+        }
+
+        .header .app-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            font-size: 1.5em;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header .app-title i {
+            color: #00bcd4;
+        }
+
+        .header .menu-icon {
+            font-size: 1.8em;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: 95vh;
+                width: 95%;
+                padding-top: 80px; /* Adjust for fixed header */
+            }
+
+            .left-panel, .right-panel {
+                padding: 20px;
+            }
+
+            .left-panel {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .header {
+                padding: 10px 20px;
+            }
+
+            .header .app-title {
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="app-title">
+            <i class="fas fa-magic"></i> 概要欄テンプレートビルダー
+        </div>
+        <i class="fas fa-bars menu-icon"></i>
+    </div>
+    <div class="container">
+        <div class="left-panel">
+            <h2>登録済みパーツ</h2>
+            <p style="color:var(--light-text-color); font-size:0.9em;">ドラッグ＆ドロップで追加！</p>
+            <div class="part-list" id="partList">
+                <!-- ここに登録済みパーツが入ります -->
+                <div class="part-item" draggable="true" data-content="いつもご視聴ありがとうございます！">
+                    <i class="fas fa-hand-sparkles"></i> <span>定型挨拶</span>
+                    <button class="remove-btn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="part-item" draggable="true" data-content="- X (旧Twitter): [URL]&#10;- Instagram: [URL]&#10;- YouTube: [URL]">
+                    <i class="fas fa-link"></i> <span>SNSリンク集</span>
+                    <button class="remove-btn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="part-item" draggable="true" data-content="- カメラ: Sony α7 IV&#10;- レンズ: SIGMA 24-70mm F2.8&#10;- マイク: RODE NT1">
+                    <i class="fas fa-camera"></i> <span>愛用機材リスト</span>
+                    <button class="remove-btn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="part-item" draggable="true" data-content="ここまで見てくれてありがとうございます！&#10;チャンネル登録・高評価よろしくお願いします！">
+                    <i class="fas fa-star"></i> <span>チャンネル登録お願い</span>
+                    <button class="remove-btn"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+            <button class="add-new-part" id="addNewPartButton">
+                <i class="fas fa-plus"></i> 新しいパーツを登録
+            </button>
+        </div>
+        <div class="right-panel">
+            <h2>今日の概要欄</h2>
+            <div class="template-area" id="templateArea">
+                <div class="template-placeholder">ここにパーツをドラッグ＆ドロップしてください</div>
+            </div>
+            <h3>プレビュー</h3>
+            <div class="preview-area" id="previewArea">
+                <!-- ここに作成中の概要欄のプレビューが表示されます -->
+            </div>
+            <button class="copy-button" id="copyButton">コピー</button>
+        </div>
+    </div>
+
+    <!-- パーツ追加/編集モーダル -->
+    <div class="modal" id="partModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">新しいパーツを登録</h3>
+            <label for="partName">パーツ名:</label>
+            <input type="text" id="partName" placeholder="例: SNSリンク集" required>
+            <label for="partContent">内容:</label>
+            <textarea id="partContent" rows="8" placeholder="例: - X (旧Twitter): [URL]&#10;- Instagram: [URL]" required></textarea>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="cancelModalButton">キャンセル</button>
+                <button class="save-btn" id="savePartButton">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- トースト通知 -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ここにJavaScriptを書きます
+        document.addEventListener('DOMContentLoaded', () => {
+            const partList = document.getElementById('partList');
+            const templateArea = document.getElementById('templateArea');
+            const previewArea = document.getElementById('previewArea');
+            const copyButton = document.getElementById('copyButton');
+            const addNewPartButton = document.getElementById('addNewPartButton');
+            const partModal = document.getElementById('partModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const partNameInput = document.getElementById('partName');
+            const partContentInput = document.getElementById('partContent');
+            const savePartButton = document.getElementById('savePartButton');
+            const cancelModalButton = document.getElementById('cancelModalButton');
+            const toast = document.getElementById('toast');
+
+            let draggedItem = null;
+            let currentEditingPart = null; // 編集中のパーツを管理
+
+            // ローカルストレージからパーツを読み込む
+            let parts = JSON.parse(localStorage.getItem('outlineBuilderParts')) || [
+                { name: '定型挨拶', content: 'いつもご視聴ありがとうございます！', icon: 'fas fa-hand-sparkles' },
+                { name: 'SNSリンク集', content: '- X (旧Twitter): [URL]\n- Instagram: [URL]\n- YouTube: [URL]', icon: 'fas fa-link' },
+                { name: '愛用機材リスト', content: '- カメラ: Sony α7 IV\n- レンズ: SIGMA 24-70mm F2.8\n- マイク: RODE NT1', icon: 'fas fa-camera' },
+                { name: 'チャンネル登録お願い', content: 'ここまで見てくれてありがとうございます！\nチャンネル登録・高評価よろしくお願いします！', icon: 'fas fa-star' }
+            ];
+
+            // ローカルストレージからテンプレートパーツを読み込む
+            let templateParts = JSON.parse(localStorage.getItem('outlineBuilderTemplate')) || [];
+
+            function saveParts() {
+                localStorage.setItem('outlineBuilderParts', JSON.stringify(parts));
+            }
+
+            function saveTemplate() {
+                // templateAreaの子要素からdata-content属性を持つ要素だけを抽出し、そのcontentを保存
+                const currentTemplate = Array.from(templateArea.children)
+                                            .filter(child => child.dataset.content)
+                                            .map(child => ({
+                                                name: child.querySelector('span').textContent,
+                                                content: child.dataset.content,
+                                                icon: child.querySelector('i')?.className // アイコンクラスも保存
+                                            }));
+                localStorage.setItem('outlineBuilderTemplate', JSON.stringify(currentTemplate));
+            }
+
+            function renderPartList() {
+                partList.innerHTML = '';
+                parts.forEach((part, index) => {
+                    const partItem = document.createElement('div');
+                    partItem.classList.add('part-item');
+                    partItem.setAttribute('draggable', true);
+                    partItem.dataset.content = part.content;
+                    partItem.dataset.name = part.name; // パーツ名をdatasetに追加
+                    partItem.dataset.index = index; // 編集用にインデックスを保存
+                    partItem.innerHTML = `<i class="${part.icon}"></i> <span>${part.name}</span>
+                                        <button class="remove-btn"><i class="fas fa-times"></i></button>`;
+                    partList.appendChild(partItem);
+                });
+            }
+
+            function renderTemplateArea() {
+                templateArea.innerHTML = '';
+                if (templateParts.length === 0) {
+                    templateArea.innerHTML = '<div class="template-placeholder">ここにパーツをドラッグ＆ドロップしてください</div>';
+                } else {
+                    templateParts.forEach(part => {
+                        const templateItem = document.createElement('div');
+                        templateItem.classList.add('part-item');
+                        templateItem.setAttribute('draggable', true);
+                        templateItem.dataset.content = part.content;
+                        templateItem.dataset.name = part.name;
+                        templateItem.innerHTML = `<i class="${part.icon}"></i> <span>${part.name}</span>
+                                                <button class="remove-btn"><i class="fas fa-times"></i></button>`;
+                        templateArea.appendChild(templateItem);
+                    });
+                }
+                updatePreview();
+            }
+
+            function updatePreview() {
+                let fullContent = [];
+                // templateAreaの子要素からdata-content属性を持つ要素のcontentを抽出
+                Array.from(templateArea.children).forEach(item => {
+                    if (item.dataset.content) {
+                        fullContent.push(item.dataset.content);
+                    }
+                });
+                previewArea.textContent = fullContent.join('\n\n'); // 各パーツの間に2つの改行
+            }
+
+            function showToast(message) {
+                toast.textContent = message;
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2000);
+            }
+
+            // 初期表示
+            renderPartList();
+            renderTemplateArea();
+
+            // Part List Drag & Drop
+            partList.addEventListener('dragstart', (e) => {
+                if (e.target.classList.contains('part-item')) {
+                    draggedItem = e.target;
+                    e.target.classList.add('dragging');
+                    // data-content, data-name, data-icon を渡す
+                    e.dataTransfer.setData('text/plain', JSON.stringify({
+                        content: draggedItem.dataset.content,
+                        name: draggedItem.dataset.name,
+                        icon: draggedItem.querySelector('i')?.className
+                    }));
+                }
+            });
+
+            partList.addEventListener('dragend', (e) => {
+                if (draggedItem) {
+                    draggedItem.classList.remove('dragging');
+                    draggedItem = null;
+                }
+            });
+
+            // Template Area Drag & Drop
+            templateArea.addEventListener('dragover', (e) => {
+                e.preventDefault(); // これがないとdropイベントが発火しない
+                const draggingItem = document.querySelector('.part-item.dragging');
+                if (draggingItem) {
+                    const afterElement = getDragAfterElement(templateArea, e.clientY);
+                    const placeholder = templateArea.querySelector('.template-placeholder');
+                    if (placeholder) placeholder.remove(); // プレースホルダーを削除
+
+                    if (afterElement == null) {
+                        templateArea.appendChild(getDragGhost(e.dataTransfer.getData('text/plain')));
+                    } else {
+                        templateArea.insertBefore(getDragGhost(e.dataTransfer.getData('text/plain')), afterElement);
+                    }
+                }
+            });
+
+            templateArea.addEventListener('dragleave', () => {
+                const ghost = templateArea.querySelector('.drag-ghost');
+                if (ghost) ghost.remove(); // ゴーストを削除
+                if (templateArea.children.length === 0) {
+                    templateArea.innerHTML = '<div class="template-placeholder">ここにパーツをドラッグ＆ドロップしてください</div>';
+                }
+            });
+
+            templateArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const ghost = templateArea.querySelector('.drag-ghost');
+                if (ghost) ghost.remove(); // ゴーストを削除
+
+                const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                const newTemplateItem = document.createElement('div');
+                newTemplateItem.classList.add('part-item');
+                newTemplateItem.setAttribute('draggable', true);
+                newTemplateItem.dataset.content = data.content;
+                newTemplateItem.dataset.name = data.name;
+                newTemplateItem.innerHTML = `<i class="${data.icon}"></i> <span>${data.name}</span>
+                                            <button class="remove-btn"><i class="fas fa-times"></i></button>`;
+
+                const afterElement = getDragAfterElement(templateArea, e.clientY);
+                if (afterElement == null) {
+                    templateArea.appendChild(newTemplateItem);
+                } else {
+                    templateArea.insertBefore(newTemplateItem, afterElement);
+                }
+
+                // templatePartsを更新して保存
+                templateParts = Array.from(templateArea.children)
+                                    .filter(child => child.dataset.content) // プレースホルダーを除外
+                                    .map(child => ({
+                                        name: child.dataset.name,
+                                        content: child.dataset.content,
+                                        icon: child.querySelector('i')?.className
+                                    }));
+                saveTemplate();
+                updatePreview();
+                showToast('テンプレートに追加しました');
+            });
+
+            function getDragAfterElement(container, y) {
+                const draggableElements = Array.from(container.querySelectorAll('.part-item:not(.dragging):not(.drag-ghost)'));
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            function getDragGhost(dataString) {
+                const data = JSON.parse(dataString);
+                const ghost = document.createElement('div');
+                ghost.classList.add('part-item', 'drag-ghost'); // ゴースト専用のクラス
+                ghost.style.opacity = '0.4';
+                ghost.style.border = '2px dashed #00bcd4';
+                ghost.style.background = 'rgba(0, 188, 212, 0.2)';
+                ghost.innerHTML = `<i class="${data.icon}"></i> <span>${data.name}</span>`;
+                return ghost;
+            }
+
+            // Remove Part from List
+            partList.addEventListener('click', (e) => {
+                if (e.target.closest('.remove-btn')) {
+                    const itemToRemove = e.target.closest('.part-item');
+                    const index = itemToRemove.dataset.index;
+                    if (confirm(`「${itemToRemove.dataset.name}」を登録済みパーツから削除しますか？`)) {
+                        parts.splice(index, 1);
+                        saveParts();
+                        renderPartList();
+                        showToast('パーツを削除しました');
+                    }
+                } else if (e.target.closest('.part-item')) {
+                    // 既存パーツの編集
+                    currentEditingPart = e.target.closest('.part-item');
+                    modalTitle.textContent = 'パーツを編集';
+                    partNameInput.value = currentEditingPart.dataset.name;
+                    partContentInput.value = currentEditingPart.dataset.content;
+                    partModal.classList.add('active');
+                }
+            });
+
+            // Remove Part from Template
+            templateArea.addEventListener('click', (e) => {
+                if (e.target.closest('.remove-btn')) {
+                    const itemToRemove = e.target.closest('.part-item');
+                    if (confirm(`「${itemToRemove.dataset.name}」を今日の概要欄から削除しますか？`)) {
+                        itemToRemove.remove();
+                        // templatePartsを更新して保存
+                        templateParts = Array.from(templateArea.children)
+                                            .filter(child => child.dataset.content)
+                                            .map(child => ({
+                                                name: child.dataset.name,
+                                                content: child.dataset.content,
+                                                icon: child.querySelector('i')?.className
+                                            }));
+                        saveTemplate();
+                        updatePreview();
+                        showToast('テンプレートから削除しました');
+                        if (templateArea.children.length === 0) {
+                            templateArea.innerHTML = '<div class="template-placeholder">ここにパーツをドラッグ＆ドロップしてください</div>';
+                        }
+                    }
+                }
+            });
+
+            // Add New Part Button
+            addNewPartButton.addEventListener('click', () => {
+                currentEditingPart = null; // 新規作成モード
+                modalTitle.textContent = '新しいパーツを登録';
+                partNameInput.value = '';
+                partContentInput.value = '';
+                partModal.classList.add('active');
+            });
+
+            // Modal Save Button
+            savePartButton.addEventListener('click', () => {
+                const name = partNameInput.value.trim();
+                const content = partContentInput.value.trim();
+
+                if (!name || !content) {
+                    alert('パーツ名と内容を入力してください。');
+                    return;
+                }
+
+                if (currentEditingPart) {
+                    // 既存パーツの編集
+                    const index = parseInt(currentEditingPart.dataset.index);
+                    parts[index].name = name;
+                    parts[index].content = content;
+                    // アイコンは変更しない
+                    showToast('パーツを更新しました');
+                } else {
+                    // 新規パーツの追加 (アイコンは暫定でfas fa-file-altとする)
+                    parts.push({ name: name, content: content, icon: 'fas fa-file-alt' });
+                    showToast('新しいパーツを登録しました');
+                }
+                saveParts();
+                renderPartList();
+                partModal.classList.remove('active');
+            });
+
+            // Modal Cancel Button
+            cancelModalButton.addEventListener('click', () => {
+                partModal.classList.remove('active');
+            });
+
+            // Copy Button
+            copyButton.addEventListener('click', () => {
+                navigator.clipboard.writeText(previewArea.textContent)
+                    .then(() => {
+                        showToast('概要欄をコピーしました！');
+                    })
+                    .catch(err => {
+                        console.error('コピー失敗:', err);
+                        alert('コピーに失敗しました。手動でコピーしてください。');
+                    });
+            });
+        });
+
+    </script>
+</body>
+</html>
